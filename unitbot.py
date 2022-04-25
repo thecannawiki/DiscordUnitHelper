@@ -8,7 +8,7 @@
 # Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -15°C from now on!
 # Simply add this bot to your server! You can choose to run it yourself or add the version that is updated and hosted by me [Wendelstein 7]
 
-# The unit conversion library was riginally created by ficolas2, https://github.com/ficolas2, 2018/01/21
+# The unit conversion library was originally created by ficolas2, https://github.com/ficolas2, 2018/01/21
 # The unit conversion library has been modified and updated by ficolas2 and Wendelstein7, https://github.com/Wendelstein7
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
@@ -24,14 +24,14 @@ from discord.ext import commands
 import unitconversion
 import unitpedialib
 
-description = """UnitCorrector: A community-beveloped open source Discord bot that corrects non-SI units to SI ones! Also features a !unitpedia command, allowing users to learn about (all) units."""
+description = """UnitCorrector: A community-developed open source Discord bot that corrects non-SI units to SI ones! Also features a !unitpedia command, allowing users to learn about (all) units."""
 bot = commands.Bot(command_prefix='!', description=description)
 
 starttime = datetime.utcnow()
 longprefix = ':symbols: UnitCorrector | '
 shortprefix = ':symbols: '
 
-credits = '**HydroNitrogen** (GH: `Wendelstein7`, <@378840449152188419>) - _Creator and main current developer_ \n**Shaq** (GH: `Shaquu`, <@197109511239106561>) - _Main current developer_ \n**ficolas** (GH: `ficolas2`, <@192368029366091777>) - _Past developer_ \n ...And other wonderful contributors, see GitHub.'
+credits = 'Developed by **Kushcabbage** (GH: `Kushcabbage`, <@192358441963094016>) for Cannawiki.net \n Forked from **HydroNitrogen** (GH: `Wendelstein7`, <@378840449152188419>)'
 
 @bot.event
 async def on_ready():
@@ -42,8 +42,8 @@ async def on_message(message): # Catches send messages and corrects non-SI units
     if bot.user.id is not message.author.id and message.author.bot is False and (message.guild is None or (message.guild is not None and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles)):
         processedMessage = unitconversion.process(message.content)
         if processedMessage is not None:
-            correctionText = ("I think " + (message.author.display_name if message.guild is not None else "you") + " meant to say: ```" + processedMessage + "```")
-            await message.channel.send(correctionText)
+            ##correctionText = ("I think " + (message.author.display_name if message.guild is not None else "you") + " meant to say: ```" + processedMessage + "```")
+            await message.channel.send(processedMessage)
     await bot.process_commands(message)
 
 @bot.event

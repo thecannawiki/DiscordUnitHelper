@@ -9,17 +9,16 @@ from argparse import ArgumentParser
 
 import unitconversion
 
-parser = ArgumentParser()
-parser.add_argument("-m", "--message", dest="message", help="Message to convert")
+tests = []
+tests.append("I use 6 gallons and then feed about 26 oz of cheese")
+tests.append("I use 6 gallons and then feed about 26 oz of cheese with like 2 acres")
 
-args, unknown = parser.parse_known_args()
 
-message = args.message
-
-if message:
-    conversion_result = unitconversion.process(message)
-    print(message)
-    print(conversion_result)
+for t in tests:
+    conversion_result = unitconversion.process(t)
+    if conversion_result:
+        print(t)
+        print(conversion_result)
 
 
 class TestUnitCorrection(unittest.TestCase):
@@ -90,6 +89,3 @@ class TestUnitCorrection(unittest.TestCase):
             result = unitconversion.process(raw_unit)
             self.assertEqual(result, expected_unit)
 
-if not message:
-    print("Running unit tests")
-    unittest.main()

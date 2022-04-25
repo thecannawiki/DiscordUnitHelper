@@ -12,7 +12,7 @@ END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
-SPACED = " "    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
+SPACED = ""    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
 USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
 SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
 DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
@@ -35,7 +35,8 @@ class UnitType:
         numberString = str((roundsignificant(value / multiple) if USESIGNIFICANT else round(value / multiple, DECIMALS)))
         if numberString[-2:] == ".0":
             numberString = numberString[:-2]
-        return numberString + SPACED + self._multiples[multiple]
+        final = numberString + self._multiples[multiple]
+        return final
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
@@ -86,6 +87,7 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
     for find in iterator:
         numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
         if numberResult is not None:
+
             initialSpaceCount = 0
             prefix = ""
             while (numberResult.group()[initialSpaceCount].isspace()):
@@ -106,6 +108,7 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
             repl[ "text"  ] = (prefix) + metricValue
             repl[ "end" ] = find.end()
             replacements.append(repl)
+            message._replacements.append((message._text[numberResult.start(): find.end()], (prefix) + metricValue))
     if len(replacements)>0:
         lastPoint = 0
         finalMessage = ""
@@ -123,7 +126,7 @@ class NormalUnit( Unit ):
         self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))", re.IGNORECASE )
 
     def convert( self, message ):
-        convertUnitInModificableMessage( message, self._regex, self.toMetric )
+        convertUnitInModificableMessage( message, self._regex, self.toMetric)
 
 class CaseSensitiveUnit( Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
@@ -140,6 +143,7 @@ class ModificableMessage:
     def __init__(self, text):
         self._text = text
         self._modified = False
+        self._replacements = []
 
     def getText(self):
         return self._text
@@ -222,6 +226,7 @@ units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) ) 
 units.append( NormalUnit( "smoot", "smoots?", DISTANCE, 1.7018 ) )                            #Smoot units
 
 #Luminous intensity
+## you can't convert this without the SPD of the light source
 #units.append( NormalUnit( "Lumen", "lumens?|lm", LUMINOUSINTENSITY, 1 ) )          #lumens
 
 #Power
@@ -232,5 +237,26 @@ def process(message):
     modificableMessage = ModificableMessage(REMOVE_REGEX.sub("", message))
     for u in units:
         u.convert(modificableMessage)
-    if modificableMessage.isModified():
-        return modificableMessage.getText()
+    if modificableMessage._replacements != []:
+        bot_message = ""
+
+        if (len(modificableMessage._replacements) == 1):
+            r = modificableMessage._replacements[0]
+            bot_message += r[0] + " is" + r[1] + "!"
+            return bot_message.strip()
+
+        if (len(modificableMessage._replacements) == 2):
+            r1 = modificableMessage._replacements[0]
+            r2 = modificableMessage._replacements[1]
+            bot_message += r1[0] + " is" + r1[1] + " and" + r2[0] + " is" + r2[1] + "!"
+            return bot_message.strip()
+
+        for count, r in enumerate(modificableMessage._replacements):
+            bot_message += r[0] +" is" + r[1] +", "
+            if(count == len(modificableMessage._replacements)): ##last one
+                bot_message += r[0] + " is" + r[1] + "!"
+        return bot_message.strip()
+
+    else:
+        return None
+
