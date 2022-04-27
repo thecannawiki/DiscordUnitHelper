@@ -7,12 +7,13 @@
 import re
 from abc import abstractmethod
 from math import log10, floor
+import random
 
 END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
-SPACED = ""    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
+SPACED = " "    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
 USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
 SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
 DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
@@ -83,7 +84,6 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
     if UNICODEMINUS:
         originalText = originalText.replace('−', '-')
     iterator = unit_regex.finditer( originalText )
-    replacements = []
     for find in iterator:
         numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
         if numberResult is not None:
@@ -103,20 +103,14 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
             SPACED = old_spacing
             if metricValue is None:
                 continue
+
             repl = {}
-            repl[ "start" ] = numberResult.start()
-            repl[ "text"  ] = (prefix) + metricValue
-            repl[ "end" ] = find.end()
-            replacements.append(repl)
-            message._replacements.append((message._text[numberResult.start(): find.end()], (prefix) + metricValue))
-    if len(replacements)>0:
-        lastPoint = 0
-        finalMessage = ""
-        for repl in replacements:
-            finalMessage += originalText[ lastPoint: repl[ "start" ] ] + repl[ "text" ]
-            lastPoint = repl["end"]
-        finalMessage += originalText[ lastPoint : ]
-        message.setText(finalMessage)
+            repl["start"] = numberResult.start()
+            repl["text"] = (prefix) + metricValue
+            repl["end"] = find.end()
+            repl["originalText"] = (message._text[repl["start"]: repl["end"]]).strip()
+            message._replacements.append((repl["start"], repl["end"], repl["originalText"], repl["text"].strip()))
+
 
 
 #NormalUnit class, that follow number + unit name.
@@ -239,24 +233,35 @@ def process(message):
         u.convert(modificableMessage)
     if modificableMessage._replacements != []:
         bot_message = ""
+        rnd = random.randint(0, 100)
+        extra = ""
+        if rnd < 9:
+            extra = " wow"
 
-        if (len(modificableMessage._replacements) == 1):
-            r = modificableMessage._replacements[0]
-            bot_message += r[0] + " is" + r[1] + "!"
+        replacements = sorted(modificableMessage._replacements,
+               key=lambda x: x[0])
+
+        if (len(replacements) == 1):
+            r = replacements[0]
+            bot_message += r[2] + " is " + r[3] + "!" + extra
             return bot_message.strip()
 
-        if (len(modificableMessage._replacements) == 2):
-            r1 = modificableMessage._replacements[0]
-            r2 = modificableMessage._replacements[1]
-            bot_message += r1[0] + " is" + r1[1] + " and" + r2[0] + " is" + r2[1] + "!"
+        if (len(replacements) == 2):
+            r1 = replacements[0]
+            r2 = replacements[1]
+            bot_message += r1[2] + " is " + r1[3] + " and " + r2[2] + " is " + r2[3] + "!" + extra
             return bot_message.strip()
 
-        for count, r in enumerate(modificableMessage._replacements):
-            bot_message += r[0] +" is" + r[1] +", "
-            if(count == len(modificableMessage._replacements)): ##last one
-                bot_message += r[0] + " is" + r[1] + "!"
+        for count, r in enumerate(replacements):
+            if(count+1 == len(replacements)): ##last one
+                bot_message += r[2] + " is " + r[3] + "!" + extra
+            else:
+                bot_message += r[2] + " is " + r[3] + ", "
         return bot_message.strip()
 
     else:
         return None
 
+
+def sortByOrderOfAppearance(replacements): #list of tuples
+    sorted=[]
