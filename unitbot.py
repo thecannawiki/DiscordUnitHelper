@@ -20,6 +20,7 @@ from datetime import datetime, date
 
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
 
 import unitconversion
 import unitpedialib
@@ -101,7 +102,7 @@ async def about(ctx): # May be changed in the future to be send in DM to prevent
     await ctx.send(embed=embed)
 
 
-with open('token', 'r') as content_file: # INFO: To run the bot yourself you must enter your bots private token in a (new) file called 'token'
-    content = content_file.read()
-
-bot.run(content)
+load_dotenv()
+TOKEN = os.getenv('DISCORD_TOKEN')
+client = discord.Client()
+bot.run(TOKEN)
