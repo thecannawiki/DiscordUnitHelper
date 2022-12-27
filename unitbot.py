@@ -25,8 +25,15 @@ from dotenv import load_dotenv
 import unitconversion
 import unitpedialib
 
+load_dotenv()
+TOKEN = os.getenv('DISCORD_TOKEN')
+intents = discord.Intents.default()
+intents.message_content = True
+intents.messages = True
+client = discord.Client(intents=intents)
+
 description = """UnitCorrector: A community-developed open source Discord bot that corrects non-SI units to SI ones! Also features a !unitpedia command, allowing users to learn about (all) units."""
-bot = commands.Bot(command_prefix='!', description=description)
+bot = commands.Bot(command_prefix='!', description=description, intents=intents)
 
 starttime = datetime.utcnow()
 longprefix = ':symbols: UnitCorrector | '
@@ -102,7 +109,5 @@ async def about(ctx): # May be changed in the future to be send in DM to prevent
     await ctx.send(embed=embed)
 
 
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-client = discord.Client()
+
 bot.run(TOKEN)
